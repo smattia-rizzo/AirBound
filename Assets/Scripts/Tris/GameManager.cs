@@ -1,0 +1,187 @@
+﻿using System.Collections;
+using TMPro;
+using Unity.InferenceEngine; // Necessario per passare il ModelAsset dall'Ispettore
+using UnityEngine;
+using UnityEngine.UI;
+using Random = UnityEngine.Random;
+
+public class GameManager : MonoBehaviour
+{
+    private Tris partita;
+    private TrisSentisAIWorker aiSentisWorker; // Il nostro nuovo worker AI neurale
+    private Button[] bottoni; // Array dei 9 bottoni della griglia
+
+    [Header("Sentis AI Asset")]
+    public ModelAsset easyTrisModel; // Trascina qui il file .onnx / .sentis dall'Ispettore di Unity
+    public ModelAsset mediumTrisModel; // Trascina qui il file .onnx / .sentis dall'Ispettore di Unity
+    public ModelAsset hardTrisModel; // Trascina qui il file .onnx / .sentis dall'Ispettore di Unity
+
+    [Header("UI Elementi")]
+    public GameObject buttonPrefab;       // Il Prefab del pulsante TMP
+    public Transform gridParent;          // L'oggetto "GrigliaPulsanti" con il Grid Layout Group
+    public TMP_Text testoStato;
+    public TMP_Text testoTimer;
+    public Dropdown dropdownDifficolta; // Dropdown per selezionare la difficoltà (Easy, Medium, Hard)
+
+    [Header("Impostazioni Timer")]
+    public float tempoMaxPerTurno = 10f;
+    private float timerRimanente;
+
+    private int giocatoreCorrente;   // 1 = Player, 2 = AI
+    private int conteggioTurni = 0;
+    private bool giocoAttivo = false;
+    private bool aiInAttesa = false;
+
+    void Start()
+    {
+        // Inizializzazione della griglia dei bottoni
+        bottoni = new Button[9];
+        for (int i = 0; i < 9; i++)
+        {
+            GameObject nuovoBottone = Instantiate(buttonPrefab, gridParent);
+            bottoni[i] = nuovoBottone.GetComponent<Button>();
+        }
+
+
+        partita = new Tris();
+
+        // Inizializziamo il worker passandogli l'asset caricato nell'Ispettore
+        if (easyTrisModel != null )
+        {
+            aiSentisWorker = new TrisSentisAIWorker(easyTrisModel);
+        }
+        else
+        {
+            Debug.LogError("Manca il file del modello AI (ModelAsset) nel GameManager!");
+            return;
+        }
+
+        for (int i = 0; i < bottoni.Length; i++)
+        {
+            int indiceMossa = i;
+            bottoni[i].onClick.AddListener(() => OnBottonePremuto(indiceMossa));
+        }
+
+        AvviaPartita();
+    }
+
+    void AvviaPartita()
+    {
+        giocoAttivo = true;
+        conteggioTurni = 1;
+        ResetGraficaBottoni();
+
+        // Scelta randomica di chi inizia
+        giocatoreCorrente = Random.Range(1, 3);
+        GestisciInizioTurno();
+    }
+
+    void Update()
+    {
+        if (!giocoAttivo) return;
+
+        if (giocatoreCorrente == 1)
+        {
+            timerRimanente -= Time.deltaTime;
+            testoTimer.text = $"Tempo: {Mathf.CeilToInt(timerRimanente)}s";
+
+            if (timerRimanente <= 0) TempoScaduto();
+        }
+        else
+        {
+            testoTimer.text = "Tempo: --";
+        }
+    }
+
+    void GestisciInizioTurno()
+    {
+        if (giocatoreCorrente == 1)
+        {
+            timerRimanente = tempoMaxPerTurno;
+            testoStato.text = $"Turno {conteggioTurni}: Tocca a te!";
+        }
+        else
+        {
+            testoStato.text = $"Turno {conteggioTurni}: L'IA sta calcolando con Sentis...";
+            StartCoroutine(EseguiMossaAI());
+        }
+    }
+
+    void OnBottonePremuto(int indice)
+    {
+        if (!giocoAttivo || giocatoreCorrente != 1 || aiInAttesa) return;
+        RisolviMossa(indice);
+    }
+
+    IEnumerator EseguiMossaAI()
+    {
+        aiInAttesa = true;
+        yield return new WaitForSeconds(0.6f); // Pausa per dare naturalezza all'azione
+
+        // Chiediamo la mossa alla Rete Neurale!
+        int mossaScelta = aiSentisWorker.CalcolaMossaModello(partita, 2);
+
+        if (mossaScelta != -1)
+        {
+            RisolviMossa(mossaScelta);
+        }
+        aiInAttesa = false;
+    }
+
+    void RisolviMossa(int indice)
+    {
+        if (partita.Play(giocatoreCorrente, indice))
+        {
+            bottoni[indice].GetComponentInChildren<TMP_Text>().text = (giocatoreCorrente == 1) ? "X" : "O";
+            bottoni[indice].interactable = false;
+
+            bool? statoPartita = partita.CheckVittoria(giocatoreCorrente);
+
+            if (statoPartita == true)
+            {
+                testoStato.text = (giocatoreCorrente == 1) ? "Hai VINTO!" : "La Rete Neurale ha VINTO!";
+                TerminaPartita();
+            }
+            else if (statoPartita == null)
+            {
+                testoStato.text = "Partita finita in PAREGGIO!";
+                TerminaPartita();
+            }
+            else
+            {
+                giocatoreCorrente = (giocatoreCorrente == 1) ? 2 : 1;
+                conteggioTurni++;
+                GestisciInizioTurno();
+            }
+        }
+    }
+
+    void TempoScaduto()
+    {
+        testoStato.text = "Tempo scaduto! Vince l'AI.";
+        TerminaPartita();
+    }
+
+    void TerminaPartita()
+    {
+        giocoAttivo = false;
+        testoTimer.text = "Fine";
+        foreach (var b in bottoni) b.interactable = false;
+    }
+
+    void ResetGraficaBottoni()
+    {
+        foreach (var b in bottoni)
+        {
+            b.GetComponentInChildren<TMP_Text>().text = "";
+            b.interactable = true;
+        }
+    }
+
+    // IMPRESCINDIBILE: Quando distruggiamo il GameManager o cambiamo scena, 
+    // dobbiamo liberare la memoria di Sentis per evitare Memory Leak gravissimi in Unity.
+    private void OnDestroy()
+    {
+        aiSentisWorker?.Dispose();
+    }
+}
