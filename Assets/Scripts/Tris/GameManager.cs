@@ -15,12 +15,17 @@ public class GameManager : MonoBehaviour
     public ModelAsset easyTrisModel; // Trascina qui il file .onnx / .sentis dall'Ispettore di Unity
     public ModelAsset mediumTrisModel; // Trascina qui il file .onnx / .sentis dall'Ispettore di Unity
     public ModelAsset hardTrisModel; // Trascina qui il file .onnx / .sentis dall'Ispettore di Unity
+    public ModelAsset extremeTrisModel; // Trascina qui il file .onnx / .sentis dall'Ispettore di Unity
 
     [Header("UI Elementi")]
     public GameObject buttonPrefab;       // Il Prefab del pulsante TMP
     public Transform gridParent;          // L'oggetto "GrigliaPulsanti" con il Grid Layout Group
     public TMP_Text gameStateText;
     public TMP_Text gameTimerText;
+
+    [Header("Bottoni di fine partita")]
+    public Button restartButton;
+    public Button menuButton;
 
     //Timer
     private float gameTimer;
@@ -32,6 +37,10 @@ public class GameManager : MonoBehaviour
 
     void Start()
     {
+        // Impostazione dei bottoni di fine partita
+        restartButton.gameObject.SetActive(false);
+        menuButton.gameObject.SetActive(false);
+
         // Inizializzazione della griglia dei bottoni
         bottoni = new Button[9];
         for (int i = 0; i < 9; i++)
@@ -70,6 +79,14 @@ public class GameManager : MonoBehaviour
                 }
                 aiSentisWorker = new TrisSentisAIWorker(hardTrisModel);
                 break;
+            case DifficultyManager.DifficultyLevelTris.Extreme:
+                if (extremeTrisModel == null)
+                {
+                    Debug.LogError("Manca il file del modello AI extreme (ModelAsset) nel GameManager!");
+                    return;
+                }
+                aiSentisWorker = new TrisSentisAIWorker(extremeTrisModel);
+                break;
         }
 
         for (int i = 0; i < bottoni.Length; i++)
@@ -100,17 +117,6 @@ public class GameManager : MonoBehaviour
         gameTimer += Time.deltaTime;
         gameTimerText.text = $"Tempo partita: {Mathf.CeilToInt(gameTimer)}s";
 
-        /*
-        if (giocatoreCorrente == 1)
-        {
-            timerRimanente -= Time.deltaTime;
-            testoTimer.text = $"Tempo: {Mathf.CeilToInt(timerRimanente)}s";
-
-        }
-        else
-        {
-            testoTimer.text = "Tempo: --";
-        }*/
     }
 
     void GestisciInizioTurno()
@@ -135,7 +141,7 @@ public class GameManager : MonoBehaviour
     IEnumerator EseguiMossaAI()
     {
         aiInAttesa = true;
-        yield return new WaitForSeconds(0.6f); // Pausa per dare naturalezza all'azione
+        yield return new WaitForSeconds(1.6f); // Pausa per dare naturalezza all'azione
 
         // Chiediamo la mossa alla Rete Neurale!
         int mossaScelta = aiSentisWorker.CalcolaMossaModello(partita, 2);
@@ -180,6 +186,20 @@ public class GameManager : MonoBehaviour
         giocoAttivo = false;
         gameTimerText.text = "Fine";
         foreach (var b in bottoni) b.interactable = false;
+
+        // Mostriamo i bottoni di fine partita
+        restartButton.gameObject.SetActive(true);
+        menuButton.gameObject.SetActive(true);
+    }
+
+    public void RestartPartita()
+    {
+        if (!giocoAttivo)
+        {
+            partita = new Tris();
+            AvviaPartita();
+        }
+        
     }
 
     void ResetGraficaBottoni()
