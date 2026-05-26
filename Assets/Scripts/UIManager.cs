@@ -49,7 +49,7 @@ public class UIManager : MonoBehaviour
     // Metodo per avviare il gioco del Tris
     public void StartTrisGame()
     {
-        if (DifficultyManager.DifficoltaCorrente == DifficultyManager.DifficultyLevelTris.None)
+        if (DifficultyManager.CurrentDifficultyTris == DifficultyManager.DifficultyLevelTris.None)
         {
             Debug.LogWarning("Animazione errore avviata!");
             dropdownAnimator.SetTrigger("TriggerError");

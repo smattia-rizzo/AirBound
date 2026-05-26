@@ -12,7 +12,7 @@ public class DifficultyManager : MonoBehaviour
         Hard
     }
 
-    public static DifficultyLevelTris DifficoltaCorrente { get; private set; } = DifficultyLevelTris.None;
+    public static DifficultyLevelTris CurrentDifficultyTris { get; private set; } = DifficultyLevelTris.None;
 
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -30,9 +30,9 @@ public class DifficultyManager : MonoBehaviour
     public void ChangeTrisDifficulty(int index)
     {
         // Converte l'indice numerico della dropdown nell'enum corrispondente
-        DifficoltaCorrente = (DifficultyLevelTris)index;
+        CurrentDifficultyTris = (DifficultyLevelTris)index;
 
-        Debug.Log("Difficoltà cambiata in: " + DifficoltaCorrente);
+        Debug.Log("Difficoltà cambiata in: " + CurrentDifficultyTris);
 
     }
 }

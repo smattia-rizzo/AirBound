@@ -19,13 +19,11 @@ public class GameManager : MonoBehaviour
     [Header("UI Elementi")]
     public GameObject buttonPrefab;       // Il Prefab del pulsante TMP
     public Transform gridParent;          // L'oggetto "GrigliaPulsanti" con il Grid Layout Group
-    public TMP_Text testoStato;
-    public TMP_Text testoTimer;
-    public Dropdown dropdownDifficolta; // Dropdown per selezionare la difficoltà (Easy, Medium, Hard)
+    public TMP_Text gameStateText;
+    public TMP_Text gameTimerText;
 
-    [Header("Impostazioni Timer")]
-    public float tempoMaxPerTurno = 10f;
-    private float timerRimanente;
+    //Timer
+    private float gameTimer;
 
     private int giocatoreCorrente;   // 1 = Player, 2 = AI
     private int conteggioTurni = 0;
@@ -46,14 +44,32 @@ public class GameManager : MonoBehaviour
         partita = new Tris();
 
         // Inizializziamo il worker passandogli l'asset caricato nell'Ispettore
-        if (easyTrisModel != null )
+        switch (DifficultyManager.CurrentDifficultyTris)
         {
-            aiSentisWorker = new TrisSentisAIWorker(easyTrisModel);
-        }
-        else
-        {
-            Debug.LogError("Manca il file del modello AI (ModelAsset) nel GameManager!");
-            return;
+            case DifficultyManager.DifficultyLevelTris.Easy:
+                if (easyTrisModel == null)
+                {
+                    Debug.LogError("Manca il file del modello AI easy (ModelAsset) nel GameManager!");
+                    return;
+                }
+                aiSentisWorker = new TrisSentisAIWorker(easyTrisModel);
+                break;
+            case DifficultyManager.DifficultyLevelTris.Medium:
+                if (mediumTrisModel == null)
+                {
+                    Debug.LogError("Manca il file del modello AI medium (ModelAsset) nel GameManager!");
+                    return;
+                }
+                aiSentisWorker = new TrisSentisAIWorker(mediumTrisModel);
+                break;
+            case DifficultyManager.DifficultyLevelTris.Hard:
+                if (mediumTrisModel == null)
+                {
+                    Debug.LogError("Manca il file del modello AI hard (ModelAsset) nel GameManager!");
+                    return;
+                }
+                aiSentisWorker = new TrisSentisAIWorker(hardTrisModel);
+                break;
         }
 
         for (int i = 0; i < bottoni.Length; i++)
@@ -80,29 +96,32 @@ public class GameManager : MonoBehaviour
     {
         if (!giocoAttivo) return;
 
+        //Aumento timer
+        gameTimer += Time.deltaTime;
+        gameTimerText.text = $"Tempo partita: {Mathf.CeilToInt(gameTimer)}s";
+
+        /*
         if (giocatoreCorrente == 1)
         {
             timerRimanente -= Time.deltaTime;
             testoTimer.text = $"Tempo: {Mathf.CeilToInt(timerRimanente)}s";
 
-            if (timerRimanente <= 0) TempoScaduto();
         }
         else
         {
             testoTimer.text = "Tempo: --";
-        }
+        }*/
     }
 
     void GestisciInizioTurno()
     {
         if (giocatoreCorrente == 1)
         {
-            timerRimanente = tempoMaxPerTurno;
-            testoStato.text = $"Turno {conteggioTurni}: Tocca a te!";
+            gameStateText.text = $"Turno {conteggioTurni}: Tocca a te!";
         }
         else
         {
-            testoStato.text = $"Turno {conteggioTurni}: L'IA sta calcolando con Sentis...";
+            gameStateText.text = $"Turno {conteggioTurni}: L'IA sta calcolando con Sentis...";
             StartCoroutine(EseguiMossaAI());
         }
     }
@@ -139,12 +158,12 @@ public class GameManager : MonoBehaviour
 
             if (statoPartita == true)
             {
-                testoStato.text = (giocatoreCorrente == 1) ? "Hai VINTO!" : "La Rete Neurale ha VINTO!";
+                gameStateText.text = (giocatoreCorrente == 1) ? "Hai VINTO!" : "La Rete Neurale ha VINTO!";
                 TerminaPartita();
             }
             else if (statoPartita == null)
             {
-                testoStato.text = "Partita finita in PAREGGIO!";
+                gameStateText.text = "Partita finita in PAREGGIO!";
                 TerminaPartita();
             }
             else
@@ -156,16 +175,10 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    void TempoScaduto()
-    {
-        testoStato.text = "Tempo scaduto! Vince l'AI.";
-        TerminaPartita();
-    }
-
     void TerminaPartita()
     {
         giocoAttivo = false;
-        testoTimer.text = "Fine";
+        gameTimerText.text = "Fine";
         foreach (var b in bottoni) b.interactable = false;
     }
 
