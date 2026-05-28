@@ -21,8 +21,14 @@ public class UIManager : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
+        // Disabilito tutti i pannelli dei giochi all'avvio
+        panelTris.SetActive(false);
+
+
         // Mostra il menu principale all'avvio
         BackToMainMenu();
+
+
     }
 
     // Update is called once per frame
@@ -35,14 +41,18 @@ public class UIManager : MonoBehaviour
     {
         panelMainMenu.SetActive(true);
         panelSelectGame.SetActive(false);
-        panelTris.SetActive(false);
     }
 
     public void SelectGame()
     {
         panelMainMenu.SetActive(false);
         panelSelectGame.SetActive(true);
+    }
+
+    public void BackToSelectGameByTris()
+    {
         panelTris.SetActive(false);
+        SelectGame();
     }
 
 

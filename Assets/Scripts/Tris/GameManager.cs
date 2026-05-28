@@ -15,7 +15,6 @@ public class GameManager : MonoBehaviour
     public ModelAsset easyTrisModel; // Trascina qui il file .onnx / .sentis dall'Ispettore di Unity
     public ModelAsset mediumTrisModel; // Trascina qui il file .onnx / .sentis dall'Ispettore di Unity
     public ModelAsset hardTrisModel; // Trascina qui il file .onnx / .sentis dall'Ispettore di Unity
-    public ModelAsset extremeTrisModel; // Trascina qui il file .onnx / .sentis dall'Ispettore di Unity
 
     [Header("UI Elementi")]
     public GameObject buttonPrefab;       // Il Prefab del pulsante TMP
@@ -35,7 +34,14 @@ public class GameManager : MonoBehaviour
     private bool giocoAttivo = false;
     private bool aiInAttesa = false;
 
+
+    // Event Handlers Unity
     void Start()
+    {
+
+    }
+
+    void OnEnable()
     {
         // Impostazione dei bottoni di fine partita
         restartButton.gameObject.SetActive(false);
@@ -79,14 +85,6 @@ public class GameManager : MonoBehaviour
                 }
                 aiSentisWorker = new TrisSentisAIWorker(hardTrisModel);
                 break;
-            case DifficultyManager.DifficultyLevelTris.Extreme:
-                if (extremeTrisModel == null)
-                {
-                    Debug.LogError("Manca il file del modello AI extreme (ModelAsset) nel GameManager!");
-                    return;
-                }
-                aiSentisWorker = new TrisSentisAIWorker(extremeTrisModel);
-                break;
         }
 
         for (int i = 0; i < bottoni.Length; i++)
@@ -98,8 +96,20 @@ public class GameManager : MonoBehaviour
         AvviaPartita();
     }
 
+    private void OnDisable()
+    {
+        DestroyButtons();
+        // Liberiamo la memoria del worker AI quando il GameManager viene disabilitato
+        aiSentisWorker?.Dispose();
+    }
+
     void AvviaPartita()
     {
+        // Impostazione dei bottoni di fine partita
+        restartButton.gameObject.SetActive(false);
+        menuButton.gameObject.SetActive(false);
+        gameTimer = 0f;
+
         giocoAttivo = true;
         conteggioTurni = 1;
         ResetGraficaBottoni();
@@ -119,6 +129,8 @@ public class GameManager : MonoBehaviour
 
     }
 
+
+    // Game Logic
     void GestisciInizioTurno()
     {
         if (giocatoreCorrente == 1)
@@ -127,7 +139,7 @@ public class GameManager : MonoBehaviour
         }
         else
         {
-            gameStateText.text = $"Turno {conteggioTurni}: L'IA sta calcolando con Sentis...";
+            gameStateText.text = $"Turno {conteggioTurni}: L'IA sta calcolando, attendere prego...";
             StartCoroutine(EseguiMossaAI());
         }
     }
@@ -181,6 +193,7 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    // Utils
     void TerminaPartita()
     {
         giocoAttivo = false;
@@ -209,6 +222,15 @@ public class GameManager : MonoBehaviour
             b.GetComponentInChildren<TMP_Text>().text = "";
             b.interactable = true;
         }
+    }
+
+    public void DestroyButtons()
+    {
+        foreach (var b in bottoni)
+        {
+            Destroy(b.gameObject);
+        }
+        bottoni = null;
     }
 
     // IMPRESCINDIBILE: Quando distruggiamo il GameManager o cambiamo scena, 

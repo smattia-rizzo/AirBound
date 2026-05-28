@@ -9,8 +9,7 @@ public class DifficultyManager : MonoBehaviour
         None,
         Easy,
         Medium,
-        Hard,
-        Extreme
+        Hard
     }
 
     public static DifficultyLevelTris CurrentDifficultyTris { get; private set; } = DifficultyLevelTris.None;
