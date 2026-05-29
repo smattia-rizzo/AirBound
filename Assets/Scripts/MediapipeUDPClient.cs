@@ -29,9 +29,9 @@ public class MediapipeUDPClient : MonoBehaviour
     private readonly object lockObject = new object();
 
     [Header("Riferimenti UI")]
-    public RectTransform mirinoTransform; // Trascina qui il RectTransform dello Sprite/Image del mirino
-    public GraphicRaycaster uiRaycaster;  // Trascina qui il Canvas principale (quello con i bottoni)
-    public EventSystem eventSystem;      // Trascina l'EventSystem della scena
+    public RectTransform mirinoTransform; // Oggetto UI che rappresenta il mirino (es. un'immagine)
+    public GraphicRaycaster uiRaycaster;  // Canvas principale della GUI
+    public EventSystem eventSystem;       // Gestisce gli eventi UI
 
     public TMP_Text feedbackVisivoAttivazione;
 
@@ -154,17 +154,14 @@ public class MediapipeUDPClient : MonoBehaviour
             if (bottone != null && bottone.interactable)
             {
                 bottone.onClick.Invoke();
-                Debug.Log($"[UI] Bottone {bottone.name} premuto con successo!");
             }
             else if (dropdown != null)
             {
-                dropdown.Show(); // Apre la lista del dropdown classico
-                Debug.Log($"[UI] Dropdown aperto!");
+                dropdown.Show();
             }
             else if (tmproDropdown != null)
             {
-                tmproDropdown.Show(); // Apre la lista se usi TextMeshPro
-                Debug.Log($"[UI] TMP Dropdown aperto!");
+                tmproDropdown.Show();
             }
         }
     }

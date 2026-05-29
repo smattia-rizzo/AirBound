@@ -8,16 +8,20 @@ using Random = UnityEngine.Random;
 public class GameManager : MonoBehaviour
 {
     private Tris partita;
-    private TrisSentisAIWorker aiSentisWorker; // Il nostro nuovo worker AI neurale
+    private TrisSentisAIWorker aiSentisWorker;
     private Button[] bottoni; // Array dei 9 bottoni della griglia
 
     [Header("Sentis AI Asset")]
-    public ModelAsset easyTrisModel; // Trascina qui il file .onnx / .sentis dall'Ispettore di Unity
-    public ModelAsset mediumTrisModel; // Trascina qui il file .onnx / .sentis dall'Ispettore di Unity
-    public ModelAsset hardTrisModel; // Trascina qui il file .onnx / .sentis dall'Ispettore di Unity
+    public ModelAsset easyTrisModel;
+    public ModelAsset mediumTrisModel;
+    public ModelAsset hardTrisModel;
+
+    [Header("Nuovi modelli")]
+    public ModelAsset newModel;
+    public ModelAsset newModelHard;
 
     [Header("UI Elementi")]
-    public GameObject buttonPrefab;       // Il Prefab del pulsante TMP
+    public GameObject buttonPrefab;       // Il Prefab del pulsante
     public Transform gridParent;          // L'oggetto "GrigliaPulsanti" con il Grid Layout Group
     public TMP_Text gameStateText;
     public TMP_Text gameTimerText;
@@ -32,7 +36,7 @@ public class GameManager : MonoBehaviour
     private int giocatoreCorrente;   // 1 = Player, 2 = AI
     private int conteggioTurni = 0;
     private bool giocoAttivo = false;
-    private bool aiInAttesa = false;
+    private bool aiInAttesa = false;    // Quando l'ai sta eseguendo i calcoli
 
 
     // Event Handlers Unity
@@ -84,6 +88,22 @@ public class GameManager : MonoBehaviour
                     return;
                 }
                 aiSentisWorker = new TrisSentisAIWorker(hardTrisModel);
+                break;
+            case DifficultyManager.DifficultyLevelTris.New:
+                if (newModel == null)
+                {
+                    Debug.LogError("Manca il file del modello AI new (ModelAsset) nel GameManager!");
+                    return;
+                }
+                aiSentisWorker = new TrisSentisAIWorker(newModel);
+                break;
+            case DifficultyManager.DifficultyLevelTris.NewHard:
+                if (newModelHard == null)
+                {
+                    Debug.LogError("Manca il file del modello AI new hard (ModelAsset) nel GameManager!");
+                    return;
+                }
+                aiSentisWorker = new TrisSentisAIWorker(newModelHard);
                 break;
         }
 
@@ -233,8 +253,7 @@ public class GameManager : MonoBehaviour
         bottoni = null;
     }
 
-    // IMPRESCINDIBILE: Quando distruggiamo il GameManager o cambiamo scena, 
-    // dobbiamo liberare la memoria di Sentis per evitare Memory Leak gravissimi in Unity.
+    // Liberiamo la memoria del worker AI alla distruzione dell'oggetto
     private void OnDestroy()
     {
         aiSentisWorker?.Dispose();

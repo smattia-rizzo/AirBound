@@ -1,17 +1,17 @@
 ﻿using UnityEngine;
-using Unity.InferenceEngine; // La nuova API ufficiale per Unity 6+ (Sentis 2.x)
+using Unity.InferenceEngine;
 
 public class TrisSentisAIWorker : System.IDisposable
 {
     private Model modelloInizializzato;
-    private Worker worker; // Diventa una classe concreta instanziabile (addio IWorker)
+    private Worker worker;
 
     public TrisSentisAIWorker(ModelAsset modelAsset)
     {
-        // Caricamento del modello (rimasto invariato)
+        // Caricamento del modello
         modelloInizializzato = ModelLoader.Load(modelAsset);
 
-        // NUOVA API: Si crea il worker direttamente tramite costruttore
+        // Creazione del worker per l'inferenza
         worker = new Worker(modelloInizializzato, BackendType.CPU);
     }
 
@@ -22,19 +22,18 @@ public class TrisSentisAIWorker : System.IDisposable
         float[] tavoloFloat = new float[9];
         for (int i = 0; i < 9; i++) tavoloFloat[i] = (float)tavoloInt[i];
 
-        // NUOVA API: Uso del Tensor generico di tipo float al posto di TensorFloat
+        // Generazione del tensor di input
         using Tensor<float> inputTensor = new Tensor<float>(new TensorShape(1, 9), tavoloFloat);
 
-        // NUOVA API: .Execute() diventa .Schedule()
         worker.Schedule(inputTensor);
 
-        // NUOVA API: Cast dell'output sul nuovo formato generico Tensor<float>
+        // Generazione del tensor di output
         Tensor<float> outputTensor = worker.PeekOutput() as Tensor<float>;
 
-        // NUOVA API: Estrazione dei dati con un'unica chiamata sincrona e pulita
+        // Download dei dati di output in un array
         float[] logitUscita = outputTensor.DownloadToArray();
 
-        // --- Logica di mascheramento mosse illegittime (identica a prima) ---
+        // Controlli mosse illegali
         int mossaMigliore = -1;
         float punteggioMassimo = float.MinValue;
         int[] tavoliereReale = gioco.Tavoliere;
@@ -56,7 +55,7 @@ public class TrisSentisAIWorker : System.IDisposable
 
     public void Dispose()
     {
-        // Ricordati sempre di fare il Dispose del worker per liberare la memoria nativa
+        // Liberiamo le risorse del worker
         worker?.Dispose();
     }
 }
